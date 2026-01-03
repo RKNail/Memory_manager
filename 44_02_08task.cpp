@@ -40,19 +40,18 @@ int create(int size, int num_pages) {
 int create_object(const char* name) {
     if (!created or nodes == tot_size or not name or strlen(name) > MAX_NAME) return 0;
     node* it = lst, *prev = NULL;
-    char* obj_name = (char*)malloc(sizeof(char) * (strlen(name) + 1));
-    if (!obj_name) return 0;
-    strcpy(obj_name, name);
     while (it) {
         if (strcmp(it->name, name) > 0) {
             break;
         } else if (strcmp(it->name, name) == 0) {
-            free(obj_name);
             return 0;
         }
         prev = it;
         it = it->next;
     }
+    char* obj_name = (char*)malloc(sizeof(char) * (strlen(name) + 1));
+    if (!obj_name) return 0;
+    strcpy(obj_name, name);
     node* obj = (node*)malloc(sizeof(node));
     if (!obj) return 0;
     obj->name = obj_name;
@@ -91,47 +90,39 @@ node* find(const char* name) {
         if (strcmp(it->name, name) == 0) {
             return it;
         }
+        it = it->next;
     }
     return NULL;
 }
 
 int destroy_object(const char* name) {
     if (not name) return 0;
-    node* obj = find(name);
-    if (!obj) return 0;
-    if (obj->prev) obj->prev->next = obj->next;
-    if (obj->next) obj->next->prev = obj->prev;
-    free(obj);
-    obj = NULL;
-    link_list* it = links, *begin = NULL,  *end = NULL;
-    while (it) {
-        int compare = strcmp(it->from, name);
-        if (compare == 0) {
-            if (!begin) begin = it;
-            node* tmp = find(it->to);
-            if (tmp) {
-                --tmp->to;
-            }
-            end = it;
-        } else if (compare > 0) {
-            if (!begin) return 1;
+    node* tmp = find(name);
+    if (not tmp) return 0;
+    if (tmp->prev) tmp->prev->next = tmp->next;
+    else lst = tmp->next;
+    if (tmp->next) tmp->next->prev = tmp->prev;
+    free(tmp->name);
+    free(tmp);
+    link_list* link_it = links, *temp = NULL;
+    while (link_it) {
+        int cmp = strcmp(link_it->from, name);
+        if (cmp == 0) {
+            tmp = find(name);
+            if (tmp) --tmp->to;
+            if (link_it->prev) link_it->prev->next = link_it->next;
+            else links = link_it->next;
+            if (link_it->next) link_it->next->prev = link_it->prev;
+            temp = link_it;
+            link_it = link_it->next;
+            free(temp->from);
+            free(temp->to);
+            free(temp);
+            continue;
+        } else if (cmp > 0) {
             break;
         }
-        it = it->next;
-    }
-    if (!end) {
-        begin->prev->next = NULL;
-        while (begin) {
-            free(begin->from);
-            free(begin->to);
-            end = begin;
-            begin = begin->next;
-            free(end);
-        }
-    } else {
-        begin->prev->next = end->next;
-        end->next->prev = begin->prev;
-
+        link_it = link_it->next;
     }
     return 1;
 }
@@ -179,19 +170,21 @@ int link(const char* object1_name, const char* object2_name) {
     link->prev = NULL;
     ++to_ptr->to;
     ++from_ptr->from;
+    link_list* prev = NULL;
     if (links) {
         link_list* link_it = links;
         while (link_it) {
-            if (strcmp(link->from, link_it->from) >= 0) {
-                link->prev = link_it->prev;
-                link->next = link_it;
-                link_it->prev = link;
-                if (link->prev) link->prev->next = link;
-                else links = link;
+            if (strcmp(link_it->from, link->from) >= 0) {
                 break;
             }
+            prev = link_it;
             link_it = link_it->next;
         }
+        link->next = link_it;
+        link->prev = prev;
+        if (link_it) link_it->prev = link;
+        if (prev) prev->next = link;
+        else links = link;
     } else {
         links = link;
     }
@@ -202,18 +195,33 @@ void print_link_counts() {
     node* it = lst;
     while (it) {
         std::cout << it->name << " " << it->to << std::endl;
+        it = it->next;
     }
 }
 
 int destroy() {
     if (!created) return 0;
-    created = 0;
-    node* node_it = lst;
+    --created;
+    tot_size = 0;
+    nodes = 0;
+    node* node_it = lst, *node_it1 = lst;
     while (node_it) {
         free(node_it->name);
-        free(node_it);
+        node_it1 = node_it;
+        node_it = node_it->next;
+        free(node_it1);
     }
-
+    link_list* link_it = links, *link_it1 = links;
+    while (link_it) {
+        free(link_it->from);
+        free(link_it->to);
+        link_it1 = link_it;
+        link_it = link_it->next;
+        free(link_it1);
+    }
+    lst = NULL;
+    links = NULL;
+    return 1;
 }
 
 
