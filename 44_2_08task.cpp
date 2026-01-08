@@ -104,11 +104,12 @@ int destroy_object(const char* name) {
     if (tmp->next) tmp->next->prev = tmp->prev;
     free(tmp->name);
     free(tmp);
+    --nodes;
     link_list* link_it = links, *temp = NULL;
     while (link_it) {
         int cmp = strcmp(link_it->from, name);
         if (cmp == 0) {
-            tmp = find(name);
+            tmp = find(link_it->to);
             if (tmp) --tmp->to;
             if (link_it->prev) link_it->prev->next = link_it->next;
             else links = link_it->next;
@@ -199,6 +200,14 @@ void print_link_counts() {
     }
 }
 
+void print_objects() {
+    node* it = lst;
+    while (it) {
+        std::cout << it->name << std::endl;
+        it = it->next;
+    }
+}
+
 int destroy() {
     if (!created) return 0;
     --created;
@@ -232,4 +241,5 @@ void setup_memory_manager(memory_manager_t* mm) {
     mm->link = link;
     mm->destroy_object = destroy_object;
     mm->print_link_counts = print_link_counts;
+    mm->print_objects = print_objects;
 }

@@ -39,5 +39,6 @@ int main() {
     printf("%d tried to create O1->O3, expected 0 due to old links didn't delete\n", mm.link("O1","O3"));
     printf("%d destroy mm, expected 1\n", mm.destroy());
     mm.print_link_counts();
+    printf("%d destroy mm, expected 0\n", mm.destroy());
     return 0;
 }
