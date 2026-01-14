@@ -27,7 +27,7 @@ node* lst = NULL;
 link_list* links = NULL;
 
 int create(int size, int num_pages) {
-    if (!created) {
+    if (!created and size > 0) {
         ++created;
         tot_size = size;
         return 1;
